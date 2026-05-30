@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>3AFC 视觉心理物理学透视实验室 (V9.0 终极真理版)</title>
+    <style>
+        /* ========================================================================
+           🎨 模块 1：科研级冷峻 UI 系统 (绝对固定网格，拒绝引发浏览器重排)
+           ======================================================================== */
+        :root {
+            --bg: #090a0f; --panel: #11141d; --border: #1e2638; --border-hl: #2d3b55;
+            --text-main: #f1f5f9; --text-muted: #64748b;
+            --t1: #00e5ff; --t2: #f59e0b; --t3: #ef4444; --t4: #a855f7;
+            --success: #10b981; --danger: #ef4444;
+        }
+        * { box-sizing: border-box; user-select: none; }
+        body { margin: 0; background: var(--bg); color: var(--text-main); font-family: 'Inter', system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; overflow-x: hidden; }
+        h2 { margin: 0 0 5px 0; font-weight: 500; font-size: 1.5rem; letter-spacing: 1px;}
+        .subtitle { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px; }
+
+        .dashboard { display: grid; grid-template-columns: 900px 1fr; gap: 20px; max-width: 1550px; width: 100%; transition: opacity 0.5s; opacity: 0; }
+        .dashboard.ready { opacity: 1; }
+
+        .viewport { position: relative; border-radius: 8px; border: 1px solid var(--border); background: #000; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+        canvas { display: block; width: 900px; height: 680px; }
+        
+        /* 轨道说明标签 */
+        .track-label { position: absolute; left: 15px; padding: 4px 8px; background: rgba(10,12,20,0.85); border-radius: 4px; font-size: 0.75rem; font-family: monospace; border-left: 3px solid; pointer-events: none; color: #cbd5e1; z-index: 10; }
+        #l-t1 { top: 15px; border-color: var(--t1); }
+        #l-t2 { top: 185px; border-color: var(--t2); }
+        #l-t3 { top: 355px; border-color: var(--t3); }
+        #l-t4 { top: 525px; border-color: var(--t4); }
+
+        .panel-col { display: flex; flex-direction: column; gap: 15px; }
+        .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 15px; }
+        .card h3 { margin: 0 0 12px 0; font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 8px;}
+        .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.85rem; }
+        
+        input[type="number"] { background: #000; border: 1px solid var(--border); color: #fff; padding: 4px 8px; border-radius: 4px; width: 90px; text-align: center; font-family: monospace; outline: none; }
+        input[type="number"]:focus { border-color: var(--t1); }
+        input[type="range"] { accent-color: var(--t1); width: 130px; cursor: pointer; }
+        input[type="checkbox"] { accent-color: var(--t1); width: 16px; height: 16px; cursor: pointer; }
+
+        .btn-group { display: flex; gap: 8px; margin-top: 10px; }
+        button { flex: 1; padding: 8px; background: #1e293b; color: #fff; border: 1px solid var(--border-hl); border-radius: 4px; font-size: 0.85rem; cursor: pointer; transition: 0.2s; font-weight: 500;}
+        button:hover { background: #334155; }
+        button.active { background: var(--t1); color: #000; border-color: var(--t1); font-weight: bold;}
+
+        /* 数据大屏 */
+        .telemetry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .tel-box { background: #05060a; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.7rem; color: #94a3b8; height: 85px; display: flex; flex-direction: column; justify-content: space-between; border-top: 3px solid; }
+        .tel-box.t1 { border-top-color: var(--t1); }
+        .tel-box.t2 { border-top-color: var(--t2); }
+        .tel-box.t3 { border-top-color: var(--t3); }
+        .tel-box.t4 { border-top-color: var(--t4); }
+        .tel-title { font-weight: bold; color: #cbd5e1; margin-bottom: 4px; font-size: 0.75rem;}
+        .tel-data-row { display: flex; justify-content: space-between; background: #0f121a; padding: 3px 6px; border-radius: 3px; border: 1px solid #1a202c; height: 22px; align-items: center;}
+        .val-hl { color: #fff; font-weight: bold; }
+
+        /* 系统滚动日志 */
+        .console { background: #05060a; border: 1px solid var(--border); border-radius: 6px; height: 135px; overflow-y: auto; padding: 10px; font-family: monospace; font-size: 0.75rem; display: flex; flex-direction: column; gap: 4px; margin-top: 15px;}
+        .console::-webkit-scrollbar { width: 6px; }
+        .console::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .log-line { color: var(--success); }
+        .log-warn { color: var(--danger); font-weight: bold; }
+
+        /* ==================== 现代化毛玻璃开屏探针 UI ==================== */
+        #probeOverlay { position: fixed; inset: 0; background: rgba(9, 10, 15, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .probe-card { background: rgba(17, 20, 29, 0.9); border: 1px solid var(--border-hl); border-radius: 12px; padding: 40px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; width: 480px; }
+        .spinner { width: 50px; height: 50px; border: 4px solid #1e293b; border-top-color: var(--t1); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 25px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #probeDetails { width: 100%; text-align: left; background: #000; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; color: #a1a1aa; margin: 20px 0; display: none; line-height: 1.8; border: 1px solid var(--border); }
+        #probeDetails span { color: #fff; font-weight: bold; float: right; }
+        .probe-btn-group { display: flex; gap: 10px; width: 100%; display: none; }
+        .btn-probe { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: 0.2s; }
+        #btnEnterTest { background: var(--t1); color: #000; box-shadow: 0 0 15px rgba(0, 229, 255, 0.4); }
+        #btnEnterTest:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(0, 229, 255, 0.6); }
+        #btnCopyLog { background: #334155; color: #fff; }
+        #btnCopyLog:hover { background: #475569; }
+    </style>
+</head>
+<body>
+
+    <!-- 开屏安全安检终端 -->
+    <div id="probeOverlay">
+        <div class="probe-card">
+            <div class="spinner" id="probeSpinner"></div>
+            <h2 id="probeTitle" style="margin-bottom: 10px;">底层物理时钟探针安检中</h2>
+            <p id="probeDesc" style="color: var(--text-muted); margin-bottom: 0;">Executing Timer Quantum & VSync Busy-Loop</p>
+            <div id="probeDetails"></div>
+            <div class="probe-btn-group" id="probeBtnGroup">
+                <button class="btn-probe" id="btnCopyLog">📄 复制审计日志</button>
+                <button class="btn-probe" id="btnEnterTest">🚀 进入透视实验室</button>
+            </div>
+        </div>
+    </div>
+
+    <h2>3AFC 算法透视实验室 (V9.0 终极真理版)</h2>
+    <div class="subtitle">欧拉时间解耦 | 完美有理数齿轮 | 独立空间对齐线 | 谐波免疫锁相环</div>
+
+    <div class="dashboard" id="mainDash">
+        <div class="viewport">
+            <canvas id="glcanvas" width="900" height="680"></canvas>
+            <!-- 轨道说明 -->
+            <div id="l-t1" class="track-label">Track 1: Native (物理显示器真实离散采样)</div>
+            <div id="l-t2" class="track-label">Track 2: Area Integration (光子面积重叠完美积分)</div>
+            <div id="l-t3" class="track-label">Track 3: ZOH + Advance Comp (离散截断中心对称对齐)</div>
+            <div id="l-t4" class="track-label">Track 4: MPV UV Hack (几何空间拉伸物理模拟)</div>
+        </div>
+
+        <div class="panel-col">
+            <!-- 拓扑生成器 -->
+            <div class="card">
+                <h3>⚙️ 拓扑锁相齿轮生成器</h3>
+                <div class="row">
+                    <label title="通过最小二乘法测出的带小数点真实物理频率">PLL 锁相物理 Hz 🔒</label>
+                    <input type="number" id="ui_host" disabled style="color:var(--t1); font-weight:bold; border-color:var(--t1);">
+                </div>
+                <div class="row">
+                    <label title="输入的理想实验参数 (如 24, 60, 100)">目标仿真 FPS</label>
+                    <input type="number" id="ui_sim" value="60" min="1" max="360">
+                </div>
+                <div class="row">
+                    <label title="系统为了抹除拍频，以完美分数强行吸附后的真实运行频率">拓扑死锁 Hz 🤖</label>
+                    <input type="number" id="ui_locked_sim" disabled style="color:var(--success); border-color:var(--success);">
+                </div>
+                <div class="row">
+                    <label title="控制变量：消除前缘发虚导致的边缘锐利度作弊可能">边缘羽化 (Control Var)</label>
+                    <div style="display:flex; gap:8px;"><input type="range" id="ui_blur" min="1" max="30" step="0.5" value="15"><span id="blurVal" style="width:25px; text-align:right;">15</span></div>
+                </div>
+                <div class="row"><label title="开启各轨道的专属对齐线，它们将原形毕露地展现底层算法的物理假象">独立轨迹对齐线</label><input type="checkbox" id="ui_line" checked></div>
+            </div>
+
+            <!-- 时间流速器 -->
+            <div class="card">
+                <h3>⏱️ 宇宙时间机 (Time Dilation)</h3>
+                <div class="row">
+                    <label title="调慢时间，观察离散采样与运动模糊的微观现象。绝对不会改变物理常数！">时间流速 (Dilation)</label>
+                    <div style="display:flex; gap:8px;"><input type="range" id="ui_speed" min="0.01" max="1.0" step="0.01" value="1.0"><span id="speedVal" style="width:40px; text-align:right;">1.00x</span></div>
+                </div>
+                <div class="btn-group">
+                    <button id="btnPrev" title="宇宙时间倒流一帧">⏪ 物理退帧</button>
+                    <button id="btnPlayPause" class="active">⏸ 冻结宇宙</button>
+                    <button id="btnNext" title="宇宙时间前进一帧">物理进帧 ⏩</button>
+                </div>
+            </div>
+
+            <!-- 数据大屏 -->
+            <div class="telemetry-grid">
+                <div class="tel-box t1">
+                    <div class="tel-title">Track 1: Native Display</div>
+                    <div class="tel-data-row"><span>物理帧号:</span><span class="val-hl" id="tel_t1_n">0</span></div>
+                    <div class="tel-data-row" style="color:var(--t1);"><span>绝对空间:</span><span class="val-hl" id="tel_t1_x">0.0px</span></div>
+                </div>
+                <div class="tel-box t2">
+                    <div class="tel-title">Track 2: Topological Integ</div>
+                    <div class="tel-data-row"><span>Frame #<span id="tel_t2_f1">0</span>:</span><span class="val-hl" style="color:var(--t2)" id="tel_t2_w1">0.0%</span></div>
+                    <div class="tel-data-row"><span>Frame #<span id="tel_t2_f2">-</span>:</span><span class="val-hl" style="color:var(--t2)" id="tel_t2_w2">-</span></div>
+                </div>
+                <div class="tel-box t3">
+                    <div class="tel-title">Track 3: ZOH + Comp</div>
+                    <div class="tel-data-row"><span>采样帧号:</span><span class="val-hl" id="tel_t3_trunc">0</span></div>
+                    <div class="tel-data-row" style="color:var(--t3);"><span>精确空间:</span><span class="val-hl" id="tel_t3_x">0.0px</span></div>
+                </div>
+                <div class="tel-box t4">
+                    <div class="tel-title">Track 4: Velocity Stretch</div>
+                    <div class="tel-data-row"><span>原生速度:</span><span class="val-hl" id="tel_t4_v">0.0px/s</span></div>
+                    <div class="tel-data-row" style="color:var(--t4);"><span>空间拉伸:</span><span class="val-hl" id="tel_t4_s">0.0px</span></div>
+                </div>
+            </div>
+
+            <!-- 系统运行日志 -->
+            <div class="console" id="jitterConsole"></div>
+        </div>
+    </div>
+
+<script>
+/** 
+ * ========================================================================
+ * 🛡️ 模块 1：底层基础设施 (防 GC 内存池 & OLS 最小二乘法锁相环)
+ * ========================================================================
+ */
+
+// 【无垃圾回收环形缓冲区】：利用二进制掩码 & 操作实现极速指针回滚，完全不触发 V8 GC 卡顿
+class ZeroGCRingBuffer {
+    constructor(size = 64) {
+        this.length = Math.pow(2, Math.ceil(Math.log2(size)));
+        this.mask = this.length - 1; 
+        this.data = new Float64Array(this.length);
+        this.head = 0; this.count = 0;
+    }
+    push(val) { 
+        this.data[this.head] = val; 
+        this.head = (this.head + 1) & this.mask; 
+        if (this.count < this.length) this.count++; 
+    }
+    getOldest() { return this.count === this.length ? this.data[this.head] : this.data[0]; }
+    getAt(idx) { return this.data[((this.count === this.length ? this.head : 0) + idx) & this.mask]; }
+    clear() { this.head = 0; this.count = 0; }
+}
+
+// 【完美物理时钟引擎】：通过历史 64 帧计算斜率，消灭 OS 单帧抖动
+class UltimateVSyncEngine {
+    constructor(seed_ms) {
+        this.buffer = new ZeroGCRingBuffer(64);
+        // 【V9.0 修复】：彻底抛弃 1000/144 的硬编码。接收来自开屏探针的真实硬件初始耗时（如 iPad 的 16.6ms）
+        // 从而完美避开 PLL 算法的“谐波死锁 (Harmonic Aliasing Trap)”
+        this.m_ms_raw = seed_ms;      
+        this.m_ms_filtered = seed_ms; 
+        this.isValid = false;
+    }
+    push(now) {
+        if (this.buffer.count > 0) {
+            let gap = now - this.buffer.getAt(this.buffer.count - 1);
+            // 如果卡顿超过 50ms（如暂停、切屏），抛弃历史数据防止直线被污染
+            if (gap > 50) { 
+                this.buffer.clear(); 
+                this.isValid = false; 
+            } 
+        }
+        this.buffer.push(now);
+        this.regress();
+    }
+    regress() {
+        let n = this.buffer.count;
+        if (n < 15) return; 
+        
+        let sumX = 0, sumY = 0, sumX2 = 0, sumXY = 0, curFrame = 0;
+        let t0 = this.buffer.getOldest(), prevTime = t0;
+        
+        // 【掉帧抗性循环】：不用1,2,3做X轴，而是用时间跨度估算帧索引，掉帧绝不影响斜率
+        for (let i = 0; i < n; i++) {
+            let t = this.buffer.getAt(i);
+            if (i > 0) curFrame += Math.round((t - prevTime) / this.m_ms_filtered);
+            prevTime = t;
+            sumX += curFrame; sumY += (t - t0); 
+            sumX2 += curFrame * curFrame; sumXY += curFrame * (t - t0);
+        }
+        let denom = (n * sumX2 - sumX * sumX);
+        if (denom === 0) return;
+        
+        // OLS 求取斜率 (毫秒/帧)
+        this.m_ms_raw = (n * sumXY - sumX * sumY) / denom;
+        
+        // MPV 级 IIR 低通滤波 (长达 1 秒的物理惯性飞轮，让时钟丝滑无匹)
+        if (!this.isValid) {
+            this.m_ms_filtered = this.m_ms_raw;
+            this.isValid = true;
+        } else {
+            let alpha = this.m_ms_filtered / (1000.0 + this.m_ms_filtered);
+            this.m_ms_filtered += alpha * (this.m_ms_raw - this.m_ms_filtered);
+        }
+    }
+    // 【V9.0 修复】：当系统被暂停导致 isValid=false 时，绝不回退到默认值，而是保持最后一次成功的过滤值
+    get ms() { return this.m_ms_filtered; } 
+}
+
+
+/** 
+ * ========================================================================
+ * 🖌️ 模块 2：纯净空间 WebGL 渲染器 (绝对禁止 GPU 处理时间)
+ * ========================================================================
+ */
+const vsGLSL = `#version 300 es
+in vec2 a_position; void main() { gl_Position = vec4(a_position, 0.0, 1.0); }`;
+
+const fsGLSL = `#version 300 es
+precision highp float;
+uniform vec2 u_resolution;
+uniform float u_blurAmount;
+uniform bool u_showLine;
+
+// GPU 现在只是一个没有思想的画笔。CPU 计算绝对像素位置喂给它。
+uniform float u_t1_x;          // Track 1
+uniform float u_t2_x[2];       // Track 2 (重影的两个坐标)
+uniform float u_t2_w[2];       // Track 2 (透明度权重)
+uniform float u_t3_x;          // Track 3
+uniform float u_t4_x;          // Track 4
+uniform float u_t4_stretch;    // Track 4 拉伸值
+
+out vec4 fragColor;
+const float RADIUS = 35.0;   
+
+// Gamma 线性矫正：确保 50%+50% 的光子混合，在物理亮度上依然是 100%
+vec3 linear2srgb(vec3 c) { return mix(12.92 * c, 1.055 * pow(c, vec3(1.0 / 2.2)) - 0.055, step(0.0031308, c)); }
+
+float drawShape(vec2 uv, float centerX, float trackIdx, float stretchX) {
+    vec2 center = vec2(centerX, (trackIdx + 0.5) * (u_resolution.y / 4.0));
+    vec2 diff = uv - center;
+    
+    // X轴形变拉伸 (针对 Track 4 的胶囊体)
+    diff.x /= (1.0 + stretchX); 
+    
+    // SDF 圆的计算与边缘平滑
+    float d = length(diff);
+    float sphere = 1.0 - smoothstep(RADIUS - u_blurAmount, RADIUS + 1.0, d);
+    
+    // 【V9.0 独立对齐线】：把对齐线纳入球体空间。
+    // 这根线也会经历 diff.x 的拉伸（对 T4 变成宽带），并且会原样返回给 main 函数。
+    // 如果是 T2 撕裂，main 函数混合时，这两根线也会跟着球一起半透明撕裂重叠！
+    float line = 0.0;
+    if (u_showLine) {
+        // 利用 abs(diff.x) 让对齐线完美跟随球的物理拉伸法则
+        float lineAlpha = 1.0 - smoothstep(0.0, 1.5, abs(diff.x));
+        float tH = u_resolution.y / 4.0;
+        // 限制线只在这个轨道的垂直高度内显示
+        line = lineAlpha * step(trackIdx * tH, uv.y) * step(uv.y, (trackIdx + 1.0) * tH) * 0.4;
+    }
+    
+    return max(sphere, line); // 球与线合并渲染
+}
+
+void main() {
+    vec2 uv = gl_FragCoord.xy; uv.y = u_resolution.y - uv.y;
+    vec3 col = vec3(0.06, 0.07, 0.1);
+    
+    // 渲染轨道分割线
+    float tH = u_resolution.y / 4.0;
+    if (abs(uv.y - tH) < 1.0 || abs(uv.y - tH*2.0) < 1.0 || abs(uv.y - tH*3.0) < 1.0) col = vec3(0.15);
+
+    // Track 1: 青色原生球
+    col += drawShape(uv, u_t1_x, 0.0, 0.0) * vec3(0.0, 0.9, 1.0);
+    
+    // Track 2: 琥珀色积分球 (根据 CPU 算好的重影权重，加法混合)
+    vec3 t2_col = vec3(0.0);
+    if(u_t2_w[0] > 0.0) t2_col += drawShape(uv, u_t2_x[0], 1.0, 0.0) * u_t2_w[0] * vec3(0.96, 0.62, 0.04);
+    if(u_t2_w[1] > 0.0) t2_col += drawShape(uv, u_t2_x[1], 1.0, 0.0) * u_t2_w[1] * vec3(0.96, 0.62, 0.04);
+    col += t2_col; 
+
+    // Track 3: 红色截断球
+    col += drawShape(uv, u_t3_x, 2.0, 0.0) * vec3(0.93, 0.26, 0.26); 
+
+    // Track 4: 紫色形变球 (传入 CPU 算好的物理拉伸量)
+    float stretch_ratio = u_t4_stretch / (RADIUS * 1.5); 
+    col += drawShape(uv, u_t4_x, 3.0, stretch_ratio) * vec3(0.66, 0.33, 0.97);
+
+    fragColor = vec4(linear2srgb(col), 1.0);
+}
+`;
+
+const gl = document.getElementById('glcanvas').getContext('webgl2', { alpha: false, antialias: false });
+function compile(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; }
+const program = gl.createProgram();
+gl.attachShader(program, compile(gl.VERTEX_SHADER, vsGLSL)); gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fsGLSL));
+gl.linkProgram(program); gl.useProgram(program);
+
+const posBuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+const posLoc = gl.getAttribLocation(program, "a_position"); gl.enableVertexAttribArray(posLoc); gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+const locs = { 
+    res: gl.getUniformLocation(program, "u_resolution"), blur: gl.getUniformLocation(program, "u_blurAmount"), showLine: gl.getUniformLocation(program, "u_showLine"),
+    t1x: gl.getUniformLocation(program, "u_t1_x"), t3x: gl.getUniformLocation(program, "u_t3_x"), 
+    t4x: gl.getUniformLocation(program, "u_t4_x"), t4s: gl.getUniformLocation(program, "u_t4_stretch"),
+    t2x: gl.getUniformLocation(program, "u_t2_x"), t2w: gl.getUniformLocation(program, "u_t2_w")
+};
+gl.uniform2f(locs.res, 900, 680);
+
+
+/** 
+ * ========================================================================
+ * 🧠 模块 3：时空绝对解耦计算大脑 (V9.0 相对论坍缩终结者)
+ * ========================================================================
+ */
+let vsyncEngine = null; // 将在探针结束后初始化
+let isPlaying = true;
+// 【关键分离】：宇宙时间代表了动画的宏观演进，由 speed 缩放。
+// 它可以调慢 100 倍，但物理帧的拓扑网格绝不会因此扭曲。
+let continuous_universe_time = 0.0; 
+let lastRenderTime = 0;
+let lastTelemetryUpdate = 0;
+
+const ANIM_SPEED = 5.0;
+const RESOLUTION_X = 900.0;
+
+// 【空间映射函数】：输入绝对时分，返回绝对的像素 X 坐标
+function getSpatialX(t_sec) { 
+    return RESOLUTION_X * 0.5 + Math.sin(t_sec * ANIM_SPEED) * (RESOLUTION_X * 0.38); 
+}
+// 求导获取瞬时速度 (像素/秒)，用于 T4 运动模糊形变
+function getVelocityX(t_sec) { 
+    return Math.abs(Math.cos(t_sec * ANIM_SPEED) * ANIM_SPEED * (RESOLUTION_X * 0.38)); 
+}
+
+function logJitter(msg, isWarn = false) {
+    const consoleEl = document.getElementById('jitterConsole');
+    const div = document.createElement('div');
+    div.className = isWarn ? 'log-warn' : 'log-line';
+    div.innerText = `[${new Date().toISOString().slice(11,19)}] ${msg}`;
+    consoleEl.appendChild(div);
+    if(consoleEl.childElementCount > 30) consoleEl.removeChild(consoleEl.firstChild);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+function buildGPUCommandsAndDraw() {
+    // 获取由 PLL 提纯的绝对单帧物理耗时 (例如 6.94ms)
+    let host_dt = vsyncEngine.ms / 1000.0; 
+    let physicalHz = 1.0 / host_dt;
+    let targetFPS = parseFloat(document.getElementById('ui_sim').value);
+    
+    // 【完美有理分数吸附】：
+    // 将目标 FPS 转换为显示器标准整数 (如 144) 下的一个完美分数。
+    // 这行代码保证了 144模拟24 时是完美的 1/6，彻底消灭 24.481Hz 的算数偏差。
+    let standard_hz = Math.round(physicalHz); 
+    let locked_ratio = targetFPS / standard_hz; 
+    let sim_dt = host_dt / locked_ratio; // 模拟世界的一帧（绝对刚性长度）
+
+    document.getElementById('ui_locked_sim').value = (physicalHz * locked_ratio).toFixed(3);
+
+    // ========================================================================
+    // 🌌 绝对拓扑时空引擎核心 (The Absolute Decoupling)
+    // ========================================================================
+    // N = 我们处于当前宇宙的第几个物理显示器快门中。
+    let N = Math.floor(continuous_universe_time / host_dt); 
+
+    // --- T1: Native 1:1 (离散物理显示器基准) ---
+    // T1 永远反映的是物理快门 [N, N+1] “正中心”那一刻的空间状态
+    let t1_center_time = (N + 0.5) * host_dt;
+    let u_t1_x = getSpatialX(t1_center_time);
+
+    // --- T2: 光子面积积分 (绝对拓扑网格) ---
+    // 在一个只有“整数格子”的网格中，算出物理快门 [N, N+1] 压住的区间
+    let sim_start_unit = N * locked_ratio;
+    let sim_end_unit = (N + 1) * locked_ratio;
+
+    // 防止 IEEE 浮点数压线误判（1e-9）
+    let start_sim_idx = Math.floor(sim_start_unit + 1e-9); 
+    let end_sim_idx = Math.floor(sim_end_unit - 1e-9);
+
+    let u_t2_x = [0.0, 0.0], u_t2_w = [0.0, 0.0], u_t2_idx = [0, 0];
+    let idx = 0;
+    
+    // 遍历快门压住的所有模拟帧 (M)
+    for (let M = start_sim_idx; M <= end_sim_idx && idx < 2; M++) {
+        // 【核心积分】：在一维无量纲数轴上，求物理快门与模拟帧 M 的重叠长度
+        let overlap = Math.max(0.0, Math.min(sim_end_unit, M + 1) - Math.max(sim_start_unit, M));
+        let weight = overlap / locked_ratio; // 百分比权重
+
+        if (weight > 1e-6) {
+            // 【重点分离】：这个重影的空间位置，只由它属于第 M 帧决定！
+            // 无论你把系统调成多慢 (0.01x)，M 与 M+1 的空间差距是铁一般的物理法则，绝不缩水。
+            u_t2_x[idx] = getSpatialX((M + 0.5) * sim_dt); 
+            u_t2_w[idx] = weight;
+            u_t2_idx[idx] = M;
+            idx++;
+        }
+    }
+
+    // --- T3: 零阶保持器 (ZOH) + 对称中心采样 ---
+    // 【完美对齐法则】：在物理快门曝光的“正中心”进行采样。
+    // 这使得 T3 抽搐时，宏观位移平均值与 T1 绝对重合，彻底终结早期的“慢半拍”现象。
+    let M_zoh = Math.floor(sim_start_unit + locked_ratio * 0.5);
+    let u_t3_x = getSpatialX((M_zoh + 0.5) * sim_dt);
+
+    // --- T4: MPV UV 拉伸形变 ---
+    let u_t4_x = u_t2_x[0];
+    let u_t4_stretch = 0.0;
+    let velocity = getVelocityX(t1_center_time); // 获取当前瞬间速率
+    
+    // 如果 T2 发生了跨帧撕裂重影，这里就进行同等的物理空间拉扯
+    if (u_t2_w[1] > 0) { 
+        u_t4_x = u_t2_x[0] * u_t2_w[0] + u_t2_x[1] * u_t2_w[1]; // 重心法则
+        u_t4_stretch = velocity * sim_dt; // 形变量 = 真实速度 * 一帧的固有驻留时间
+    }
+
+    // --- 提交给 Dumb GPU ---
+    gl.uniform1f(locs.t1x, u_t1_x);
+    gl.uniform1fv(locs.t2x, u_t2_x); gl.uniform1fv(locs.t2w, u_t2_w);
+    gl.uniform1f(locs.t3x, u_t3_x);
+    gl.uniform1f(locs.t4x, u_t4_x); gl.uniform1f(locs.t4s, u_t4_stretch);
+    
+    gl.uniform1f(locs.blur, parseFloat(document.getElementById('ui_blur').value));
+    gl.uniform1i(locs.showLine, document.getElementById('ui_line').checked ? 1 : 0);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // --- UI 遥测大屏防抖更新 ---
+    let now = performance.now();
+    if (now - lastTelemetryUpdate > 100 || !isPlaying) {
+        lastTelemetryUpdate = now;
+        
+        document.getElementById('tel_t1_n').innerText = N;
+        document.getElementById('tel_t1_x').innerText = u_t1_x.toFixed(1) + "px";
+
+        document.getElementById('tel_t2_f1').innerText = u_t2_idx[0];
+        document.getElementById('tel_t2_w1').innerText = (u_t2_w[0] * 100).toFixed(1) + "%";
+        if(u_t2_w[1] > 0) {
+            document.getElementById('tel_t2_f2').innerText = u_t2_idx[1];
+            document.getElementById('tel_t2_w2').innerText = (u_t2_w[1] * 100).toFixed(1) + "%";
+        } else {
+            document.getElementById('tel_t2_f2').innerText = "-";
+            document.getElementById('tel_t2_w2').innerText = "-";
+        }
+
+        document.getElementById('tel_t3_trunc').innerText = M_zoh;
+        document.getElementById('tel_t3_x').innerText = u_t3_x.toFixed(1) + "px";
+
+        document.getElementById('tel_t4_v').innerText = velocity.toFixed(0) + "px/s";
+        document.getElementById('tel_t4_s').innerText = u_t4_stretch.toFixed(1) + "px";
+    }
+}
+
+/** 
+ * ========================================================================
+ * 🔁 模块 4：宇宙心跳引擎 (The Real-Time Main Loop)
+ * ========================================================================
+ */
+function renderLoop(now) {
+    if (!isPlaying) { requestAnimationFrame(renderLoop); return; }
+
+    // 喂给锁相环
+    vsyncEngine.push(now);
+    let host_dt_ms = vsyncEngine.ms;
+    
+    // 【UI 实时回显】：证明我们暂停切出后台后，PLL数据不会重置！
+    document.getElementById('ui_host').value = (1000.0 / host_dt_ms).toFixed(3); 
+
+    if (lastRenderTime > 0) {
+        let actualDelta = now - lastRenderTime;
+        // 防弹保护：切出后台等导致的长时跳跃，强行拦截在 100ms
+        if (actualDelta > 100) actualDelta = 100;
+        
+        let speed = parseFloat(document.getElementById('ui_speed').value);
+        // 【极其纯粹的欧拉积分】：仅仅缩放时间流速的指针。
+        // 这意味着在 0.01x 下，宇宙走得极慢，同一个 N 会冻结维持一百帧之久，展现出完美的宏观慢放！
+        continuous_universe_time += (actualDelta / 1000.0) * speed;
+    }
+    
+    lastRenderTime = now;
+    buildGPUCommandsAndDraw();
+    
+    requestAnimationFrame(renderLoop);
+}
+
+/** 
+ * ========================================================================
+ * 🎛️ 模块 5：事件绑定与双重混合开屏探针 (V9.0 重磅)
+ * ========================================================================
+ */
+['ui_sim', 'ui_blur', 'ui_line', 'ui_speed'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+        if(id === 'ui_blur') document.getElementById('blurVal').innerText = parseFloat(document.getElementById('ui_blur').value).toFixed(1);
+        if(id === 'ui_speed') document.getElementById('speedVal').innerText = parseFloat(document.getElementById('ui_speed').value).toFixed(2) + 'x';
+        if (!isPlaying) buildGPUCommandsAndDraw(); 
+    });
+});
+
+document.getElementById('btnPlayPause').onclick = function() {
+    isPlaying = !isPlaying;
+    this.innerText = isPlaying ? "⏸ 冻结宇宙" : "▶ 恢复流逝";
+    this.style.background = isPlaying ? "#1e293b" : "var(--t1)";
+    this.style.borderColor = isPlaying ? "var(--border-hl)" : "var(--t1)";
+    this.style.color = isPlaying ? "#fff" : "#000";
+    if (isPlaying) { 
+        lastRenderTime = performance.now(); 
+        logJitter("宇宙时间恢复，开启欧拉平滑演进。"); 
+    } else { 
+        logJitter("时间冻结，所有轨道数字网格已完全锁定。"); 
+    }
+};
+
+function manualStep(direction) {
+    if (isPlaying) document.getElementById('btnPlayPause').click();
+    continuous_universe_time += direction * (vsyncEngine.ms / 1000.0);
+    buildGPUCommandsAndDraw();
+}
+document.getElementById('btnNext').onclick = () => manualStep(1);
+document.getElementById('btnPrev').onclick = () => manualStep(-1);
+
+// 【双重高阶探针】：不仅测算时钟分辨率，更通过 rAF 测算出真实显示器原生帧长，彻底消灭 iPad 60Hz 谐波死锁！
+let probeLogText = "";
+async function runAdvancedProbe() {
+    // Phase 1: Timer Quantum 忙循环 (查底层反追踪拦截)
+    let t0 = performance.now(), last = t0;
+    let samplesQ = [];
+    while (performance.now() - t0 < 50.0) {
+        let curr = performance.now();
+        if (curr > last) { samplesQ.push(curr - last); last = curr; }
+    }
+    samplesQ.sort((a,b)=>a-b);
+    let quantum = samplesQ.length > 0 ? samplesQ[Math.floor(samplesQ.length/2)] : 1.0;
+
+    // Phase 2: Native VSync VBI 探测 (跑 30 帧获取平均晶振间隔)
+    document.getElementById('probeDesc').innerText = "VBI Vertical Blanking Interval 捕获中 (2/2)...";
+    let rAF_samples = [];
+    let rAF_last = await new Promise(r => requestAnimationFrame(r));
+    for (let i = 0; i < 30; i++) {
+        let rAF_curr = await new Promise(r => requestAnimationFrame(r));
+        rAF_samples.push(rAF_curr - rAF_last);
+        rAF_last = rAF_curr;
+    }
+    rAF_samples.sort((a,b)=>a-b);
+    let nativeFrameMs = rAF_samples[Math.floor(rAF_samples.length/2)];
+    let nativeHz = Math.round(1000 / nativeFrameMs);
+
+    return { quantum, nativeFrameMs, nativeHz };
+}
+
+runAdvancedProbe().then(stats => {
+    document.getElementById('probeSpinner').style.display = 'none';
+    let detailBox = document.getElementById('probeDetails');
+    let btnGroup = document.getElementById('probeBtnGroup');
+    
+    probeLogText = `[SYS.PROBE.REPORT]\nQuantum_ms: ${stats.quantum.toFixed(3)}\nNative_VSync_ms: ${stats.nativeFrameMs.toFixed(3)}\nEstimated_Hz: ${stats.nativeHz}\nTimestamp: ${new Date().toISOString()}`;
+    
+    detailBox.style.display = 'block';
+    detailBox.innerHTML = `
+        <span>[SYS.AUDIT]</span>底层探针诊断报告<br><br>
+        时钟微观分辨率: <span>${stats.quantum.toFixed(3)} ms</span><br>
+        晶振垂直消隐耗时: <span>${stats.nativeFrameMs.toFixed(3)} ms</span><br>
+        硬件原生刷新率: <span style="color:var(--t1)">${stats.nativeHz} Hz</span>
+    `;
+
+    btnGroup.style.display = 'flex';
+    
+    if (stats.quantum <= 2.0) {
+        document.getElementById('probeTitle').innerText = "环境安检通过：高精度锁相就绪";
+        document.getElementById('probeTitle').style.color = "var(--success)";
+        document.getElementById('probeDesc').innerText = "系统运行在科研级硬实时无干扰环境中。";
+    } else {
+        document.getElementById('probeTitle').innerText = "警告：检测到浏览器时钟被降频降级";
+        document.getElementById('probeTitle').style.color = "var(--danger)";
+        document.getElementById('probeDesc').innerText = "可能处于省电模式或防指纹追踪状态，微秒级精度受损。";
+        document.getElementById('btnEnterTest').style.background = "var(--danger)";
+    }
+
+    document.getElementById('btnCopyLog').onclick = () => {
+        navigator.clipboard.writeText(probeLogText);
+        let btn = document.getElementById('btnCopyLog');
+        btn.innerText = "✅ 日志已复制";
+        setTimeout(() => btn.innerText = "📄 复制审计日志", 2000);
+    };
+
+    document.getElementById('btnEnterTest').onclick = () => {
+        // 【关键初始化】：将测算出的真实原生帧长 (如 iPad的 16.6) 作为种子喂给 PLL，彻底消灭谐波死锁！
+        vsyncEngine = new UltimateVSyncEngine(stats.nativeFrameMs);
+        
+        // 人性化：自动把左侧面板的仿真 FPS 设置为你的屏幕原生 FPS
+        document.getElementById('ui_sim').value = stats.nativeHz;
+        
+        document.getElementById('probeOverlay').style.display = 'none';
+        document.getElementById('mainDash').classList.add('ready');
+        logJitter(`V9.0 纯净解耦管线已加载，原生晶振设为 ${stats.nativeHz}Hz。`);
+        requestAnimationFrame(renderLoop);
+    };
+});
+</script>
+</body>
+</html>
